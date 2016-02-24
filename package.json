@@ -1,8 +1,8 @@
 {
   "name": "catsblog",
-  "version": "0.9.0",
+  "version": "0.10.0",
   "description": "Yet another simple and direct static blog generator",
-  "main": "index.js",
+  "bin": "./index.js",
   "scripts": {
     "test": "http-server ./output"
   },
@@ -12,6 +12,7 @@
     "static",
     "generator"
   ],
+    "preferGlobal": true,
   "author": "otrianodev",
   "license": "MIT",
   "dependencies": {
