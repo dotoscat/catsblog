@@ -1,0 +1,22 @@
+{
+  "name": "catsblog",
+  "version": "0.1.0",
+  "description": "Yet another simple and direct static blog generator",
+  "main": "index.js",
+  "scripts": {
+    "test": "http-server ./output"
+  },
+  "keywords": [
+    "blog",
+    "web",
+    "static",
+    "generator"
+  ],
+  "author": "otrianodev",
+  "license": "MIT",
+  "dependencies": {
+    "json-front-matter": "^1.0.0",
+    "markdown": "^0.5.0",
+    "mustache": "^2.2.1"
+  }
+}
