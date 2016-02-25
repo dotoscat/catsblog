@@ -7,21 +7,6 @@ const mustache = require("mustache");
 const markdown = require("markdown");
 const jfm = require("json-front-matter");
 
-var config = JSON.parse(fs.readFileSync("config.json"));
-var postTemplate = fs.readFileSync(config.postTemplate, "utf8");
-var tagsTemplate = fs.readFileSync(config.tagTemplate, "utf8");
-var pageTemplate = fs.readFileSync(config.pageTemplate, "utf8");
-
-console.log(__dirname)
-
-var postList = fs.readdirSync(config.source);
-var postInfo = [];
-var tags = [];
-var renderedTagList = null;
-var pages = null;
-
-console.log(postList);
-
 function createSiteStructure(base, siteStructure) {
 	let finalStructure = {};
     base = path.resolve(base);
@@ -187,53 +172,113 @@ function writePage (page, nPages, tagList, siteStructure, template) {
 	fs.writeFileSync(page.path, pageContent);
 }
 
-var siteStructure = createSiteStructure(config.output, [
+function generateSite() {
+    //console.log("apply sort", postInfo);
+    //console.log(config)
+    //console.log(tags)
+    let config = JSON.parse(fs.readFileSync("config.json"));
+    let postTemplate = fs.readFileSync(config.postTemplate, "utf8");
+    let tagsTemplate = fs.readFileSync(config.tagTemplate, "utf8");
+    let pageTemplate = fs.readFileSync(config.pageTemplate, "utf8");
+
+    console.log(__dirname)
+
+    let postList = fs.readdirSync(config.source);
+    let postInfo = [];
+    let tags = [];
+    let renderedTagList = null;
+    let pages = null;
+
+    let siteStructure = createSiteStructure(config.output, [
 		"posts",
 		"tags",
 		"pages"
 	]);
 
-//console.log(siteStructure)
+    //console.log(siteStructure)
 
-for (let i = 0; i < postList.length; i++){
-	let aPostInfo = getPostInfo(postList[i], siteStructure, config);
-	postInfo.push( aPostInfo );
-	addTagsFromPostInfo(tags, aPostInfo, siteStructure, config);
+    for (let i = 0; i < postList.length; i++){
+        let aPostInfo = getPostInfo(postList[i], siteStructure, config);
+        postInfo.push( aPostInfo );
+        addTagsFromPostInfo(tags, aPostInfo, siteStructure, config);
+    }
+    //console.log(postInfo);
+    postInfo.sort ( (postA, postB) => {
+        let postADate = new Date(postA.attributes.date);
+        let postBDate = new Date(postB.attributes.date);
+        return postADate > postBDate ? -1 : 1 ;
+    });
+    
+    console.log(postList);
+    for (let i = 0; i < postInfo.length; i++){
+        renderPost(postInfo[i], tags);
+    }
+
+    renderedTagList = renderTagList(tags);
+    //console.log(renderedTagList)
+
+    pages = generatePages(postInfo, config.postsPerPage, siteStructure);
+    //console.log(pages)
+
+    var tagsKeys = Object.keys(tags);
+
+    for (let i = 0; i < tagsKeys.length; i++){
+        let key = tagsKeys[i];
+        if (key[0] === '_')continue;
+        writeTagPage(key, tags[key], renderedTagList, tagsTemplate);
+    }
+
+    for (let i = 0; i < postInfo.length; i++){
+        writePost(postInfo[i], postTemplate);
+    }
+
+    for (let i = 0; i < pages.length; i++){
+        writePage(pages[i], pages.length, renderedTagList, siteStructure, pageTemplate);
+    }
 }
-//console.log(postInfo);
-postInfo.sort ( (postA, postB) => {
-    let postADate = new Date(postA.attributes.date);
-    let postBDate = new Date(postB.attributes.date);
-    return postADate > postBDate ? -1 : 1 ;
-});
-//console.log("apply sort", postInfo);
-//console.log(config)
-//console.log(tags)
 
-for (let i = 0; i < postInfo.length; i++){
-	renderPost(postInfo[i], tags);
+const version = "0.1.0";
+
+function showHelp(){
+    console.log(`
+        catsblog ${version}
+        Usage:
+            catsblog [-h, --help] [-p, --publish] <site directory>
+            -h --help Show this help
+            -p --publish Publish the site directory
+    `);
 }
 
-renderedTagList = renderTagList(tags);
-//console.log(renderedTagList)
+let program = {};
 
-pages = generatePages(postInfo, config.postsPerPage, siteStructure);
-//console.log(pages)
+program.showHelp = process.argv.length < 3;
 
-var tagsKeys = Object.keys(tags);
-
-for (let i = 0; i < tagsKeys.length; i++){
-	let key = tagsKeys[i];
-	if (key[0] === '_')continue;
-	writeTagPage(key, tags[key], renderedTagList, tagsTemplate);
+for (let i = 2; i < process.argv.length; i++){
+    let parameter = process.argv[i];
+    program.showHelp = parameter.search(/-h$|--help$/) > -1 ? true : program.showHelp;
+    program.publish = parameter.search(/-p$|--publish$/) > -1 ? true : false;
+    program.directory = i === process.argv.length-1 ? path.resolve(parameter) : ""; 
 }
 
-for (let i = 0; i < postInfo.length; i++){
-	writePost(postInfo[i], postTemplate);
+if (program.showHelp){
+    showHelp();
+    process.exit(1);
+};
+
+try{
+    if (!fs.statSync(program.directory).isDirectory()){
+        console.log("Plase enter a valid site directory");
+        process.exit(1);
+    }
+}
+catch (error){
+    console.log(error);
+    console.log("Plase enter a valid site directory");
+    process.exit(1);
 }
 
-for (let i = 0; i < pages.length; i++){
-	writePage(pages[i], pages.length, renderedTagList, siteStructure, pageTemplate);
-}
+console.log("Working with", program.directory);
+let directoryFiles = fs.readdirSync(program.directory);
+console.log(directoryFiles);
 
-return 0;
+process.exit(0);
