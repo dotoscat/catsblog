@@ -18,7 +18,7 @@ function createSiteStructure(base, siteStructure) {
 		catch (error) {
 			fs.mkdirSync(folder);
 		}
-		finalStructure[dir] = folder;
+		finalStructure[dir] = path.resolve(folder);
 	});
 	finalStructure.root = base;
 	return finalStructure;
@@ -172,31 +172,45 @@ function writePage (page, nPages, tagList, siteStructure, template) {
 	fs.writeFileSync(page.path, pageContent);
 }
 
-function generateSite() {
+function generateSite(program) {
     //console.log("apply sort", postInfo);
     //console.log(config)
     //console.log(tags)
-    let config = JSON.parse(fs.readFileSync("config.json"));
-    let postTemplate = fs.readFileSync(config.postTemplate, "utf8");
-    let tagsTemplate = fs.readFileSync(config.tagTemplate, "utf8");
-    let pageTemplate = fs.readFileSync(config.pageTemplate, "utf8");
-
-    console.log(__dirname)
-
-    let postList = fs.readdirSync(config.source);
+    let config = null;
+    try{
+        config = JSON.parse(fs.readFileSync( path.join(program.directory, "config.json") ) );
+    }
+    catch (error) {
+        console.log(`There are problems with config.json on ${program.directory}`);
+        process.exit(1);
+    }
+                            
+    function getCorrectPath(directory, templateName, defaultTemplateName) {
+        return typeof templateName === "string" ? path.join(directory, templateName) : path.join(__dirname, defaultTemplateName);
+    }
+                            
+    let postTemplate = fs.readFileSync(getCorrectPath(program.directory, program.postTemplate, "postTemplate.html"), "utf8");  
+    let tagsTemplate = fs.readFileSync(getCorrectPath(program.directory, program.tagsTemplate, "tagsPage.html"), "utf8");
+    let pageTemplate = fs.readFileSync(getCorrectPath(program.directory, program.pageTemplate, "pageTemplate.html"), "utf8");
+    
+    let source = typeof config.source === "string" ? config.source : "" ;
+    
+    let postList = fs.readdirSync( path.join(program.directory, source ));
     let postInfo = [];
     let tags = [];
     let renderedTagList = null;
     let pages = null;
 
-    let siteStructure = createSiteStructure(config.output, [
+    let siteStructure = createSiteStructure( path.join(program.directory, config.output), [
 		"posts",
 		"tags",
 		"pages"
 	]);
 
-    //console.log(siteStructure)
+    console.log(siteStructure)
 
+    process.exit(0)
+    
     for (let i = 0; i < postList.length; i++){
         let aPostInfo = getPostInfo(postList[i], siteStructure, config);
         postInfo.push( aPostInfo );
@@ -257,7 +271,7 @@ for (let i = 2; i < process.argv.length; i++){
     let parameter = process.argv[i];
     program.showHelp = parameter.search(/-h$|--help$/) > -1 ? true : program.showHelp;
     program.publish = parameter.search(/-p$|--publish$/) > -1 ? true : false;
-    program.directory = i === process.argv.length-1 ? path.resolve(parameter) : ""; 
+    program.directory = i === process.argv.length-1 ? path.resolve(parameter) : "";
 }
 
 if (program.showHelp){
@@ -278,7 +292,8 @@ catch (error){
 }
 
 console.log("Working with", program.directory);
+console.log("__dirname", __dirname);
 let directoryFiles = fs.readdirSync(program.directory);
 console.log(directoryFiles);
 
-process.exit(0);
+generateSite(program);
