@@ -172,6 +172,12 @@ function writePage (page, nPages, tagList, siteStructure, template) {
 	fs.writeFileSync(page.path, pageContent);
 }
 
+function copyFile(from, to){
+    console.log("from", from);
+    console.log("to", to);
+    fs.createReadStream(from).pipe(fs.createWriteStream(to));
+}
+
 function generateSite(program) {
     //console.log("apply sort", postInfo);
     //console.log(config)
@@ -193,9 +199,10 @@ function generateSite(program) {
     let tagsTemplate = fs.readFileSync(getCorrectPath(program.directory, program.tagsTemplate, "tagsPage.html"), "utf8");
     let pageTemplate = fs.readFileSync(getCorrectPath(program.directory, program.pageTemplate, "pageTemplate.html"), "utf8");
     
-    let source = typeof config.source === "string" ? config.source : "" ;
+    config.source = path.join(program.directory, config.source) ;
     
-    let postList = fs.readdirSync( path.join(program.directory, source ));
+    let postList = fs.readdirSync( config.source );
+    postList.forEach ( (file) => { path.join( config.source, file ) });
     let postInfo = [];
     let tags = [];
     let renderedTagList = null;
@@ -209,14 +216,14 @@ function generateSite(program) {
 
     console.log(siteStructure)
 
-    process.exit(0)
+    //process.exit(0)
     
     for (let i = 0; i < postList.length; i++){
         let aPostInfo = getPostInfo(postList[i], siteStructure, config);
         postInfo.push( aPostInfo );
         addTagsFromPostInfo(tags, aPostInfo, siteStructure, config);
     }
-    //console.log(postInfo);
+    console.log(postInfo);
     postInfo.sort ( (postA, postB) => {
         let postADate = new Date(postA.attributes.date);
         let postBDate = new Date(postB.attributes.date);
@@ -229,10 +236,10 @@ function generateSite(program) {
     }
 
     renderedTagList = renderTagList(tags);
-    //console.log(renderedTagList)
+    console.log(renderedTagList)
 
     pages = generatePages(postInfo, config.postsPerPage, siteStructure);
-    //console.log(pages)
+    console.log(pages)
 
     var tagsKeys = Object.keys(tags);
 
@@ -249,6 +256,8 @@ function generateSite(program) {
     for (let i = 0; i < pages.length; i++){
         writePage(pages[i], pages.length, renderedTagList, siteStructure, pageTemplate);
     }
+    console.log(config);
+    copyFile( path.join(program.directory, config.style), path.join(siteStructure.root, config.style) );
 }
 
 const version = "0.1.0";
