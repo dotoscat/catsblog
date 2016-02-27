@@ -1,6 +1,6 @@
 {
   "name": "catsblog",
-  "version": "0.11.0",
+  "version": "0.12.0",
   "description": "Yet another simple and direct static blog generator for humans",
   "bin": "./index.js",
   "scripts": {

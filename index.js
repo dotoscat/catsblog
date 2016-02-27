@@ -318,13 +318,40 @@ function init(output){
     }
 }
 
-const version = "0.1.0";
+function createPost(program){
+    let date = new Date();
+    
+    const content = `{{{
+	"date": "${date.toLocaleString()}",
+	"tags": [],
+	"title": "${program.item}"
+    }}}
+
+    Write here with markdown!
+
+`;
+    
+    let postsDir = path.join(program.directory, "posts");
+     try{
+         fs.accessSync(postsDir);
+     }
+    catch(error){
+        fs.mkdirSync(postsDir);
+    }
+    
+    let postPath = path.join(program.directory, "posts", program.item+".md");
+    fs.writeFileSync(postPath, content, "utf8");
+    console.log(postPath);
+}
+
+const version = "0.12.0";
 
 function showHelp(){
     console.log(`
         catsblog ${version}
         Usage:
             catsblog init|create <site directory>
+            catsblog createPost <Post title>
             catsblog [-g | --generate] publish <site directory>
             catsblog [-p | --publish] generate <site directory>
             catsblog Show this help
@@ -343,8 +370,10 @@ program.generate = false;
 program.publish = false;
 program.init = false;
 program.subcommand = "";
+program.create = false;
+program.item = "";
 
-const subcommands = /^init$|^create$|^publish$|^generate$/;
+const subcommands = /^(init|create|publish|generate|createPost)$/i;
 
 for (let i = 2; i < process.argv.length; i++){
     let parameter = process.argv[i];
@@ -352,13 +381,14 @@ for (let i = 2; i < process.argv.length; i++){
     program.publish = parameter.search(/-p$|--publish$|^publish$/) > -1 ? true : program.publish;
     program.generate = parameter.search(/-g$|--generate$|^generate$/) > -1 ? true : program.generate;
     program.subcommand = program.subcommand === "" && parameter.search(subcommands) > -1 ? parameter : program.subcommand;
-    program.directory = program.subcommand !== "" && parameter.search(subcommands) === -1 && i === process.argv.length-1 ? path.resolve(parameter) : program.directory;
+    program.item = program.subcommand !== "" && parameter.search(subcommands) === -1 && i === process.argv.length-1 ? parameter : program.item;
     //console.log(i, program);
 }
 
-program.showHelp = program.directory === "" ? true : program.showHelp;
+program.showHelp = program.item === "" ? true : program.showHelp;
 program.generate = program.subcommand === "generate" ? true : program.generate;
 program.publish = program.publish === "publish" ? true : program.publish;
+program.directory = program.subcommand === "createPost" ? process.cwd() : path.resolve(program.item);
 
 if (program.showHelp){
     showHelp();
@@ -366,8 +396,14 @@ if (program.showHelp){
 };
 
 if (program.subcommand === "init"){
-    init(program.directory);
+    console.log("init", program.directory);
+    //init(program.directory);
     process.exit(0);
+}
+
+if (program.subcommand === "createPost"){
+    console.log("create post", program.item, "on", program.directory);
+    createPost(program);
 }
 
 if (program.generate){
