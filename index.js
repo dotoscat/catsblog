@@ -10,6 +10,12 @@ const jfm = require("json-front-matter");
 function createSiteStructure(base, siteStructure) {
 	let finalStructure = {};
     base = path.resolve(base);
+    try{
+        fs.accessSync(base);
+    }
+    catch (error) {
+        fs.mkdirSync(base);
+    }
 	siteStructure.forEach( (dir) => {
 		let folder = path.join(base, dir);
 		try{
@@ -55,7 +61,7 @@ function addTagsFromPostInfo (tags, post, siteStructure, config) {
 function renderPost(postInfo, tags) {
 	let template = `
 	<article>
-	<h1>{{title}}</h1>
+	<h1>{{articleTitle}}</h1>
 	{{{content}}}
 	<p>{{date}}</p>
 	<ul>
@@ -75,7 +81,7 @@ function renderPost(postInfo, tags) {
 		
 	let view = {
 		"content": markdownRendered,
-		"title": postInfo.attributes.title,
+		"arcticleTitle": postInfo.attributes.title,
 		"date": postInfo.attributes.date,
 		"tags": postTags
 	}
@@ -100,15 +106,30 @@ function renderTagList (tags) {
 	return mustache.render(template, {"tags": tagList});
 }
 
-function writePost(postInfo, template){
-	let postOutput = mustache.render(template, {"article": postInfo.body, "title": postInfo.attributes.title});
+function writePost(postInfo, template, config){
+    
+    let view = {
+        "article": postInfo.body,
+        "arcticleTitle": postInfo.attributes.title,
+        "title": config.title
+    }
+    
+	let postOutput = mustache.render(template, view);
 	fs.writeFileSync(postInfo.attributes.path, postOutput, "utf8");
 }
 
-function writeTagPage(tag, tagInfo, tagsListRendered, template){
+function writeTagPage(tag, tagInfo, tagsListRendered, template, config){
 	//console.log(tag)
 	//console.log(tagList._rendered)
-	let pageContent = mustache.render(template, {"tag": tag, "posts": tagInfo.posts, "tagsList": tagsListRendered});
+    
+    let view = {
+        "tag": tag,
+        "posts": tagInfo.posts,
+        "tagsList": tagsListRendered,
+        "title": config.title
+    }
+    
+	let pageContent = mustache.render(template, view);
 	//console.log(pageContent)
 	fs.writeFileSync(tagInfo.path, pageContent, "utf8");
 }
@@ -144,8 +165,9 @@ function generatePages (posts, postsPerPage, siteStructure) {
 	return pages;
 }
 
-function writePage (page, nPages, tagList, siteStructure, template) {
+function writePage (page, nPages, tagList, siteStructure, template, config) {
 	let view = {
+        title: config.title,
 		posts: page.posts,
 		tagList: tagList,
 		previous: () => {
@@ -246,18 +268,54 @@ function generateSite(program) {
     for (let i = 0; i < tagsKeys.length; i++){
         let key = tagsKeys[i];
         if (key[0] === '_')continue;
-        writeTagPage(key, tags[key], renderedTagList, tagsTemplate);
+        writeTagPage(key, tags[key], renderedTagList, tagsTemplate, config);
     }
 
     for (let i = 0; i < postInfo.length; i++){
-        writePost(postInfo[i], postTemplate);
+        writePost(postInfo[i], postTemplate, config);
     }
 
     for (let i = 0; i < pages.length; i++){
-        writePage(pages[i], pages.length, renderedTagList, siteStructure, pageTemplate);
+        writePage(pages[i], pages.length, renderedTagList, siteStructure, pageTemplate, config);
     }
     console.log(config);
     copyFile( path.join(program.directory, config.style), path.join(siteStructure.root, config.style) );
+}
+
+function init(output){
+    
+    output = typeof output === "undefined" ? "" : output;
+    
+    let basicConfig = `{
+"title": "catsblog",
+"source": "posts",
+"output": "output",
+"postsPerPage": 2,
+"style": "style.css"
+}
+`;
+
+    let configFile = path.join(output, "config.json");
+    let style = path.join(output, "style.css");
+    
+    try{
+        fs.accessSync(output);
+    }
+    catch(error){
+        fs.mkdirSync(output);
+    }
+    try{
+        fs.accessSync(configFile);
+    }
+    catch(error){
+        fs.writeFileSync(configFile, JSON.stringify(basicConfig), "utf8");
+    }
+    try{
+        fs.accessSync(style);
+    }
+    catch(error){
+        fs.writeFileSync(style, "", "utf8");
+    }
 }
 
 const version = "0.1.0";
@@ -266,43 +324,57 @@ function showHelp(){
     console.log(`
         catsblog ${version}
         Usage:
-            catsblog [-h, --help] [-p, --publish] <site directory>
-            -h --help Show this help
-            -p --publish Publish the site directory
+            catsblog init|create <site directory>
+            catsblog [-g | --generate] publish <site directory>
+            catsblog [-p | --publish] generate <site directory>
+            catsblog Show this help
+
+            -g --generate   Generate site
+            -p --publish    Publish the site
+            -h --help       Show this help
     `);
 }
 
 let program = {};
 
 program.showHelp = process.argv.length < 3;
+program.directory = "";
+program.generate = false;
+program.publish = false;
+program.init = false;
+program.subcommand = "";
+
+const subcommands = /^init$|^create$|^publish$|^generate$/;
 
 for (let i = 2; i < process.argv.length; i++){
     let parameter = process.argv[i];
     program.showHelp = parameter.search(/-h$|--help$/) > -1 ? true : program.showHelp;
-    program.publish = parameter.search(/-p$|--publish$/) > -1 ? true : false;
-    program.directory = i === process.argv.length-1 ? path.resolve(parameter) : "";
+    program.publish = parameter.search(/-p$|--publish$|^publish$/) > -1 ? true : program.publish;
+    program.generate = parameter.search(/-g$|--generate$|^generate$/) > -1 ? true : program.generate;
+    program.subcommand = program.subcommand === "" && parameter.search(subcommands) > -1 ? parameter : program.subcommand;
+    program.directory = program.subcommand !== "" && parameter.search(subcommands) === -1 && i === process.argv.length-1 ? path.resolve(parameter) : program.directory;
+    //console.log(i, program);
 }
+
+program.showHelp = program.directory === "" ? true : program.showHelp;
+program.generate = program.subcommand === "generate" ? true : program.generate;
+program.publish = program.publish === "publish" ? true : program.publish;
 
 if (program.showHelp){
     showHelp();
     process.exit(1);
 };
 
-try{
-    if (!fs.statSync(program.directory).isDirectory()){
-        console.log("Plase enter a valid site directory");
-        process.exit(1);
-    }
-}
-catch (error){
-    console.log(error);
-    console.log("Plase enter a valid site directory");
-    process.exit(1);
+if (program.subcommand === "init"){
+    init(program.directory);
+    process.exit(0);
 }
 
-console.log("Working with", program.directory);
-console.log("__dirname", __dirname);
-let directoryFiles = fs.readdirSync(program.directory);
-console.log(directoryFiles);
-
-generateSite(program);
+if (program.generate){
+    generateSite(program);
+    console.log("generate");
+}
+if (program.publish){
+    console.log("publish");
+}
+//generateSite(program);

@@ -6,7 +6,10 @@
         <link rel="stylesheet" type="text/css" href="/style.css" />
 	</head>
 	<body>
-		<h1>{{tag}}</h1>
+        <header>
+            <h1>{{title}}</h1>
+		  <h2>{{tag}}</h2>
+        </header>
 		<ul>
 		{{#posts}}
 		<li><a href="{{{url}}}">{{title}}</a></li>
