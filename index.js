@@ -64,7 +64,7 @@ function renderPost(postInfo, tags) {
 	<h1>{{articleTitle}}</h1>
 	{{{content}}}
 	<p>{{date}}</p>
-	<ul>
+	<ul id="tags">
 	{{#tags}}
 		<li><a href=\"{{{url}}}\">{{tag}}</a></li>
 	{{/tags}}
@@ -81,7 +81,7 @@ function renderPost(postInfo, tags) {
 		
 	let view = {
 		"content": markdownRendered,
-		"arcticleTitle": postInfo.attributes.title,
+		"articleTitle": postInfo.attributes.title,
 		"date": postInfo.attributes.date,
 		"tags": postTags
 	}
@@ -91,7 +91,7 @@ function renderPost(postInfo, tags) {
 
 function renderTagList (tags) {
 	let template = `
-		<ul>
+		<ul id="tags">
 		{{#tags}}
 			<li><a href=\"{{{url}}}\">{{tag}}</a></li>
 		{{/tags}}
