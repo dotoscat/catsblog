@@ -12,15 +12,15 @@ program
     })
     .parse(process.argv);
     
-let basicConfigFile = `{
+var basicConfigFile = `{
     "title": "catsblog",
     "postsPerPage": 2,
-    "style": "style.css"
 }
 `;
 
 function init(directory){
     util.mkdirIfNotExistsSync(directory);
+    util.writeFileIfNotExistsSync(path.join(directory, "config.json"), JSON.stringify(basicConfigFile));
     console.log(directory);
     process.exit(0);
 }

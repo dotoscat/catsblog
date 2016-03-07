@@ -20,5 +20,5 @@ function writeFileIfNotExistsSync(file, content){
 
 module.exports = {
     "mkdirIfNotExistsSync": mkdirIfNotExistsSync,
-    "writeFileIfNotExistsSync": writeFileIfNotExistsSync;
+    "writeFileIfNotExistsSync": writeFileIfNotExistsSync
 }
