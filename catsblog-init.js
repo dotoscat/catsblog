@@ -26,27 +26,3 @@ function init(directory){
 }
 
 program.help();
-
-/*
-let configFile = path.join(output, "config.json");
-let style = path.join(output, "style.css");
-
-try{
-    fs.accessSync(output);
-}
-catch(error){
-    fs.mkdirSync(output);
-}
-try{
-    fs.accessSync(configFile);
-}
-catch(error){
-    fs.writeFileSync(configFile, JSON.stringify(basicConfig), "utf8");
-}
-try{
-    fs.accessSync(style);
-}
-catch(error){
-    fs.writeFileSync(style, "", "utf8");
-}
-*/
