@@ -1,6 +1,17 @@
 #!/usr/bin/env	node
 
 "use strict";
+
+const VERSION = "0.12.0";
+
+var program = require("commander");
+
+program
+    .version(VERSION)
+    .command("init <directory>", "Init site directory")
+    .parse(process.argv);
+/*
+
 const fs = require("fs");
 const path = require("path");
 const mustache = require("mustache");
@@ -195,9 +206,12 @@ function writePage (page, nPages, tagList, siteStructure, template, config) {
 }
 
 function copyFile(from, to){
-    console.log("from", from);
-    console.log("to", to);
-    fs.createReadStream(from).pipe(fs.createWriteStream(to));
+    try{
+        fs.writeFileSync(to, fs.readFileSync(from));
+    }
+    catch (error){
+        console.log("Error copying file, from " + from + ", to" + to);
+    }
 }
 
 function generateSite(program) {
@@ -282,52 +296,16 @@ function generateSite(program) {
     copyFile( path.join(program.directory, config.style), path.join(siteStructure.root, config.style) );
 }
 
-function init(output){
-    
-    output = typeof output === "undefined" ? "" : output;
-    
-    let basicConfig = `{
-"title": "catsblog",
-"source": "posts",
-"output": "output",
-"postsPerPage": 2,
-"style": "style.css"
-}
-`;
-
-    let configFile = path.join(output, "config.json");
-    let style = path.join(output, "style.css");
-    
-    try{
-        fs.accessSync(output);
-    }
-    catch(error){
-        fs.mkdirSync(output);
-    }
-    try{
-        fs.accessSync(configFile);
-    }
-    catch(error){
-        fs.writeFileSync(configFile, JSON.stringify(basicConfig), "utf8");
-    }
-    try{
-        fs.accessSync(style);
-    }
-    catch(error){
-        fs.writeFileSync(style, "", "utf8");
-    }
-}
-
 function createPost(program){
     let date = new Date();
     
     const content = `{{{
-	"date": "${date.toLocaleString()}",
-	"tags": [],
-	"title": "${program.item}"
-    }}}
+"date": "${date.toLocaleString()}",
+"tags": [],
+"title": "${program.item}"
+}}}
 
-    Write here with markdown!
+Write here with markdown!
 
 `;
     
@@ -397,7 +375,7 @@ if (program.showHelp){
 
 if (program.subcommand === "init"){
     console.log("init", program.directory);
-    //init(program.directory);
+    init(program.directory);
     process.exit(0);
 }
 
@@ -413,4 +391,5 @@ if (program.generate){
 if (program.publish){
     console.log("publish");
 }
-//generateSite(program);
+
+*/

@@ -2,7 +2,7 @@
   "name": "catsblog",
   "version": "0.12.0",
   "description": "Yet another simple and direct static blog generator for humans",
-  "bin": "./index.js",
+  "bin": {"catsblog": "./index.js"},
   "scripts": {
     "test": "http-server ./output"
   },
@@ -12,10 +12,11 @@
     "static",
     "generator"
   ],
-    "preferGlobal": true,
+  "preferGlobal": true,
   "author": "otrianodev",
   "license": "MIT",
   "dependencies": {
+    "commander": "^2.9.0",
     "json-front-matter": "^1.0.0",
     "markdown": "^0.5.0",
     "mustache": "^2.2.1"
