@@ -9,6 +9,7 @@ var program = require("commander");
 program
     .version(VERSION)
     .command("init <directory>", "Init site directory")
+    .command("add-post <postname>", "Add a post with a title")
     .parse(process.argv);
 /*
 
