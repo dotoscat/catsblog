@@ -10,6 +10,7 @@ program
     .version(VERSION)
     .command("init <directory>", "Init site directory")
     .command("add-post <postname>", "Add a post with a title")
+    .command("remove-post <postname>", "Remove a post from the site")
     .parse(process.argv);
 /*
 
@@ -67,7 +68,7 @@ function addTagsFromPostInfo (tags, post, siteStructure, config) {
 		if (tags[tag].posts.find( (tagPost) => tagPost.title === post.attributes.title ? true : false) ) continue;
 		tags[tag].posts.push({"title":post.attributes.title, "url":post.attributes.url });
 	}
-	
+
 }
 
 function renderPost(postInfo, tags) {
@@ -90,14 +91,14 @@ function renderPost(postInfo, tags) {
 		let copy = {"tag": tag, "url": tags[tag].url};
 		postTags.push(copy);
 	}
-		
+
 	let view = {
 		"content": markdownRendered,
 		"articleTitle": postInfo.attributes.title,
 		"date": postInfo.attributes.date,
 		"tags": postTags
 	}
-	
+
 	postInfo.body = mustache.render(template, view);
 }
 
@@ -109,7 +110,7 @@ function renderTagList (tags) {
 		{{/tags}}
 		</ul>
 	`
-	
+
 	let tagList = [];
 	let keys = Object.keys(tags);
 	for (let i = 0; i < keys.length; i++){
@@ -119,13 +120,13 @@ function renderTagList (tags) {
 }
 
 function writePost(postInfo, template, config){
-    
+
     let view = {
         "article": postInfo.body,
         "arcticleTitle": postInfo.attributes.title,
         "title": config.title
     }
-    
+
 	let postOutput = mustache.render(template, view);
 	fs.writeFileSync(postInfo.attributes.path, postOutput, "utf8");
 }
@@ -133,14 +134,14 @@ function writePost(postInfo, template, config){
 function writeTagPage(tag, tagInfo, tagsListRendered, template, config){
 	//console.log(tag)
 	//console.log(tagList._rendered)
-    
+
     let view = {
         "tag": tag,
         "posts": tagInfo.posts,
         "tagsList": tagsListRendered,
         "title": config.title
     }
-    
+
 	let pageContent = mustache.render(template, view);
 	//console.log(pageContent)
 	fs.writeFileSync(tagInfo.path, pageContent, "utf8");
@@ -148,7 +149,7 @@ function writeTagPage(tag, tagInfo, tagsListRendered, template, config){
 
 function generatePages (posts, postsPerPage, siteStructure) {
 	let pages = [];
-	
+
 	function createPage (path, url, idPage) {
 		return {
 			id: idPage,
@@ -157,7 +158,7 @@ function generatePages (posts, postsPerPage, siteStructure) {
 			path: path,
 		}
 	}
-	
+
 	let page = createPage(path.join(siteStructure.root, "index.html"), "/index.html", 0);
 	for (let i = 0, currentPosts = 0, iPage = 0; i < posts.length; i += 1){
 		page.posts.push (posts[i]);
@@ -200,7 +201,7 @@ function writePage (page, nPages, tagList, siteStructure, template, config) {
 			return "";
 		}
 	}
-	
+
 	let pageContent = mustache.render(template, view);
 	//console.log(pageContent);
 	fs.writeFileSync(page.path, pageContent);
@@ -227,17 +228,17 @@ function generateSite(program) {
         console.log(`There are problems with config.json on ${program.directory}`);
         process.exit(1);
     }
-                            
+
     function getCorrectPath(directory, templateName, defaultTemplateName) {
         return typeof templateName === "string" ? path.join(directory, templateName) : path.join(__dirname, defaultTemplateName);
     }
-                            
-    let postTemplate = fs.readFileSync(getCorrectPath(program.directory, program.postTemplate, "postTemplate.html"), "utf8");  
+
+    let postTemplate = fs.readFileSync(getCorrectPath(program.directory, program.postTemplate, "postTemplate.html"), "utf8");
     let tagsTemplate = fs.readFileSync(getCorrectPath(program.directory, program.tagsTemplate, "tagsPage.html"), "utf8");
     let pageTemplate = fs.readFileSync(getCorrectPath(program.directory, program.pageTemplate, "pageTemplate.html"), "utf8");
-    
+
     config.source = path.join(program.directory, config.source) ;
-    
+
     let postList = fs.readdirSync( config.source );
     postList.forEach ( (file) => { path.join( config.source, file ) });
     let postInfo = [];
@@ -254,7 +255,7 @@ function generateSite(program) {
     console.log(siteStructure)
 
     //process.exit(0)
-    
+
     for (let i = 0; i < postList.length; i++){
         let aPostInfo = getPostInfo(postList[i], siteStructure, config);
         postInfo.push( aPostInfo );
@@ -266,7 +267,7 @@ function generateSite(program) {
         let postBDate = new Date(postB.attributes.date);
         return postADate > postBDate ? -1 : 1 ;
     });
-    
+
     console.log(postList);
     for (let i = 0; i < postInfo.length; i++){
         renderPost(postInfo[i], tags);
@@ -299,7 +300,7 @@ function generateSite(program) {
 
 function createPost(program){
     let date = new Date();
-    
+
     const content = `{{{
 "date": "${date.toLocaleString()}",
 "tags": [],
@@ -309,7 +310,7 @@ function createPost(program){
 Write here with markdown!
 
 `;
-    
+
     let postsDir = path.join(program.directory, "posts");
      try{
          fs.accessSync(postsDir);
@@ -317,7 +318,7 @@ Write here with markdown!
     catch(error){
         fs.mkdirSync(postsDir);
     }
-    
+
     let postPath = path.join(program.directory, "posts", program.item+".md");
     fs.writeFileSync(postPath, content, "utf8");
     console.log(postPath);
