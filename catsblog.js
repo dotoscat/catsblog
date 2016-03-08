@@ -10,6 +10,7 @@ program
     .version(VERSION)
     .command("init <directory>", "Init site directory")
     .command("add-post <postname>", "Add a post with a title")
+    .command("list-posts", "List the posts and their status")
     .command("remove-post <postname>", "Remove a post from the site")
     .parse(process.argv);
 /*
