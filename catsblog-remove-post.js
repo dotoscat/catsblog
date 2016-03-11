@@ -23,7 +23,7 @@ function removePost(postName){
     process.exit(0);
   }
   catch(error){
-    console.log("Error deleting %s", postName);
+    console.error("Error deleting %s", postName);
     process.exit(1);
   }
 }
